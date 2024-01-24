@@ -205,7 +205,6 @@ class TensorInfo {
             get_modified_dims_from_layout(_layout, layout, new_dims);
             _dims = new_dims;
             modify_strides();
-            _max_shape.assign(_dims.begin() + 1, _dims.end());
         }
         _layout = layout;
         if (_layout == RocalTensorlayout::NHWC || _layout == RocalTensorlayout::NDHWC) {
