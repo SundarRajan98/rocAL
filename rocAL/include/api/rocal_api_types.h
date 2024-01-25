@@ -218,9 +218,15 @@ enum RocalTensorLayout {
     /*! \brief AMD ROCAL_NFCHW
      */
     ROCAL_NFCHW = 3,
+    /*! \brief AMD ROCAL_NDHWC
+     */
+    ROCAL_NDHWC = 4,
+    /*! \brief AMD ROCAL_NCDHW
+     */
+    ROCAL_NCDHW = 5,
     /*! \brief AMD ROCAL_NONE
      */
-    ROCAL_NONE = 4  // Layout for generic tensors (Non-Image or Non-Video)
+    ROCAL_NONE = 6  // Layout for generic tensors (Non-Image or Non-Video)
 };
 
 /*! \brief rocAL Tensor Output Type enum
@@ -312,8 +318,7 @@ enum RocalResizeScalingMode {
 /*! \brief rocAL Resize Interpolation Type enum
  * \ingroup group_rocal_types
  */
-enum RocalResizeInterpolationType
-{
+enum RocalResizeInterpolationType {
     /*! \brief AMD ROCAL_NEAREST_NEIGHBOR_INTERPOLATION
      */
     ROCAL_NEAREST_NEIGHBOR_INTERPOLATION = 0,
@@ -371,6 +376,18 @@ enum RocalExternalSourceMode {
     /*! \brief uncompressed raw buffer passed as input
      */
     ROCAL_EXTSOURCE_RAW_UNCOMPRESSED = 2,
+};
+
+/*! \brief Tensor padding types
+ * \ingroup group_rocal_types
+ */
+enum RocalOutOfBoundsPolicy {
+    /*! \brief TRIM_TO_SHAPE
+     */
+    TRIMTOSHAPE = 0,
+    /*! \brief PAD
+     */
+    PAD,
 };
 
 #endif  // MIVISIONX_ROCAL_API_TYPES_H

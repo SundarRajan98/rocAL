@@ -21,28 +21,28 @@ THE SOFTWARE.
 */
 
 #pragma once
+
 #include "graph.h"
 #include "node.h"
 #include "parameter_factory.h"
 #include "parameter_vx.h"
 
-class BrightnessNode : public Node {
+class GaussianNoiseNode : public Node {
    public:
-    BrightnessNode(const std::vector<Tensor *> &inputs, const std::vector<Tensor *> &outputs);
-    BrightnessNode() = delete;
-
-    void init(float alpha, float beta, int conditional_execution);
-    void init(FloatParam *alpha_param, FloatParam *beta_param, IntParam *conditional_execution);
+    GaussianNoiseNode(const std::vector<Tensor *> &inputs, const std::vector<Tensor *> &outputs);
+    GaussianNoiseNode() = delete;
+    void init(float mean, float std_dev, int seed, int conditional_execution);
+    void init(FloatParam *mean_param, FloatParam *stddev_param, int seed, IntParam *condition_execution_param);
 
    protected:
     void create_node() override;
     void update_node() override;
 
    private:
-    ParameterVX<float> _alpha;
-    ParameterVX<float> _beta;
+    ParameterVX<float> _mean, _stddev;
     ParameterVX<int> _conditional_execution;
-    constexpr static float ALPHA_RANGE[2] = {0.1, 1.95};
-    constexpr static float BETA_RANGE[2] = {0, 25};
+    constexpr static float MEAN_RANGE[2] = {0, 5};
+    constexpr static float STDDEV_RANGE[2] = {1, 5};
     constexpr static int CONDITIONAL_EXECUTION_RANGE[2] = {0, 1};
+    int _seed;
 };

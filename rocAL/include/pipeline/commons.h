@@ -46,6 +46,8 @@ enum class RocalTensorlayout {
     NCHW,
     NFHWC,
     NFCHW,
+    NDHWC,
+    NCDHW,
     NONE
 };
 
@@ -103,6 +105,15 @@ enum class DecodeMode {
 enum class RocalROIType {
     LTRB = 0,
     XYWH
+};
+
+/*! \brief Tensor 3D ROI type
+ *
+ * currently supports following formats
+ */
+enum class Rocal3DROIType {
+    LTFRBB = 0,
+    XYZWHD
 };
 
 /*! \brief Tensor ROI in LTRB format

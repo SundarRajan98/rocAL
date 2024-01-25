@@ -21,21 +21,22 @@ THE SOFTWARE.
 */
 
 #include <vx_ext_rpp.h>
-#include "node_brightness.h"
+#include "node_gaussian_noise.h"
 #include "exception.h"
 
-BrightnessNode::BrightnessNode(const std::vector<Tensor *> &inputs, const std::vector<Tensor *> &outputs) : Node(inputs, outputs),
-                                                                                                            _alpha(ALPHA_RANGE[0], ALPHA_RANGE[1]),
-                                                                                                            _beta(BETA_RANGE[0], BETA_RANGE[1]),
-                                                                                                            _conditional_execution(CONDITIONAL_EXECUTION_RANGE[0], CONDITIONAL_EXECUTION_RANGE[1]) {}
+GaussianNoiseNode::GaussianNoiseNode(const std::vector<Tensor*>& inputs, const std::vector<Tensor*>& outputs) : Node(inputs, outputs),
+                                                                                                      _mean(MEAN_RANGE[0], MEAN_RANGE[1]),
+                                                                                                      _stddev(STDDEV_RANGE[0], STDDEV_RANGE[1]),
+                                                                                                      _conditional_execution(CONDITIONAL_EXECUTION_RANGE[0], CONDITIONAL_EXECUTION_RANGE[1]) {}
 
-void BrightnessNode::create_node() {
+void GaussianNoiseNode::create_node() {
     if (_node)
         return;
 
-    _alpha.create_array(_graph, VX_TYPE_FLOAT32, _batch_size);
-    _beta.create_array(_graph, VX_TYPE_FLOAT32, _batch_size);
+    _mean.create_array(_graph, VX_TYPE_FLOAT32, _batch_size);
+    _stddev.create_array(_graph, VX_TYPE_FLOAT32, _batch_size);
     _conditional_execution.create_array(_graph, VX_TYPE_INT32, _batch_size);
+    vx_scalar seed = vxCreateScalar(vxGetContext((vx_reference)_graph->get()), VX_TYPE_UINT32, &_seed);
     int input_layout = static_cast<int>(_inputs[0]->info().layout());
     int output_layout = static_cast<int>(_outputs[0]->info().layout());
     int roi_type = static_cast<int>(_inputs[0]->info().roi_type());
@@ -43,26 +44,29 @@ void BrightnessNode::create_node() {
     vx_scalar output_layout_vx = vxCreateScalar(vxGetContext((vx_reference)_graph->get()), VX_TYPE_INT32, &output_layout);
     vx_scalar roi_type_vx = vxCreateScalar(vxGetContext((vx_reference)_graph->get()), VX_TYPE_INT32, &roi_type);
 
-    _node = vxExtRppBrightness(_graph->get(), _inputs[0]->handle(), _inputs[0]->get_roi_tensor(), _outputs[0]->handle(), _alpha.default_array(), _beta.default_array(), _conditional_execution.default_array(), input_layout_vx, output_layout_vx,roi_type_vx);
+    _node = vxExtRppGaussianNoise(_graph->get(), _inputs[0]->handle(), _inputs[0]->get_roi_tensor(), _outputs[0]->handle(), _mean.default_array(),
+                          _stddev.default_array(), _conditional_execution.default_array(), seed, input_layout_vx, output_layout_vx, roi_type_vx);
     vx_status status;
     if ((status = vxGetStatus((vx_reference)_node)) != VX_SUCCESS)
-        THROW("Adding the brightness (vxExtRppBrightness) node failed: " + TOSTR(status))
+        THROW("Adding the Noise (vxExtRppGaussianNoise) node failed: " + TOSTR(status))
 }
 
-void BrightnessNode::init(float alpha, float beta, int conditional_execution) {
-    _alpha.set_param(alpha);
-    _beta.set_param(beta);
+void GaussianNoiseNode::init(float mean, float stddev, int seed, int conditional_execution) {
+    _mean.set_param(mean);
+    _stddev.set_param(stddev);
+    _seed = seed;
     _conditional_execution.set_param(conditional_execution);
 }
 
-void BrightnessNode::init(FloatParam *alpha, FloatParam *beta, IntParam *conditional_execution) {
-    _alpha.set_param(core(alpha));
-    _beta.set_param(core(beta));
-    _conditional_execution.set_param(core(conditional_execution));
+void GaussianNoiseNode::init(FloatParam* mean_param, FloatParam* stddev_param, int seed, IntParam* condition_execution_param) {
+    _mean.set_param(core(mean_param));
+    _stddev.set_param(core(stddev_param));
+    _seed = seed;
+    _conditional_execution.set_param(core(condition_execution_param));
 }
 
-void BrightnessNode::update_node() {
-    _alpha.update_array();
-    _beta.update_array();
+void GaussianNoiseNode::update_node() {
+    _mean.update_array();
+    _stddev.update_array();
     _conditional_execution.update_array();
 }

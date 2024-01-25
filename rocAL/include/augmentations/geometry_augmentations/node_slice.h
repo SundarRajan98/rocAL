@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2019 - 2023 Advanced Micro Devices, Inc. All rights reserved.
+Copyright (c) 2023 Advanced Micro Devices, Inc. All rights reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,24 +25,27 @@ THE SOFTWARE.
 #include "node.h"
 #include "parameter_factory.h"
 #include "parameter_vx.h"
+#include "rocal_api_types.h"
 
-class BrightnessNode : public Node {
+class SliceNode : public Node {
    public:
-    BrightnessNode(const std::vector<Tensor *> &inputs, const std::vector<Tensor *> &outputs);
-    BrightnessNode() = delete;
-
-    void init(float alpha, float beta, int conditional_execution);
-    void init(FloatParam *alpha_param, FloatParam *beta_param, IntParam *conditional_execution);
+    SliceNode(const std::vector<Tensor *> &inputs, const std::vector<Tensor *> &outputs);
+    SliceNode() = delete;
+    ~SliceNode();
+    void init(Tensor *anchor_param, std::vector<int> shape_param, std::vector<float> &fill_values_param, RocalOutOfBoundsPolicy policy);
 
    protected:
     void create_node() override;
     void update_node() override;
+    void create_shape_tensor();
 
    private:
-    ParameterVX<float> _alpha;
-    ParameterVX<float> _beta;
-    ParameterVX<int> _conditional_execution;
-    constexpr static float ALPHA_RANGE[2] = {0.1, 1.95};
-    constexpr static float BETA_RANGE[2] = {0, 25};
-    constexpr static int CONDITIONAL_EXECUTION_RANGE[2] = {0, 1};
+    vx_array _fill_values_array;
+    void *_shape_array;
+    Tensor *_anchor;
+    vx_tensor _shape = nullptr;
+    std::vector<float> _fill_values, _fill_values_vec;
+    std::vector<int> _anchor_vec, _shape_vec;
+    std::vector<std::vector<uint32_t>> _slice_roi;
+    RocalOutOfBoundsPolicy _policy = RocalOutOfBoundsPolicy::PAD;
 };
