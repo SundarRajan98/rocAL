@@ -56,8 +56,6 @@ class UniformRand : public Parameter<T> {
         return _array;
     }
 
-
-
     void renew_value() {
         std::unique_lock<std::mutex> lock(_lock);
         auto val = _generator();
@@ -70,7 +68,6 @@ class UniformRand : public Parameter<T> {
             _updated_val = static_cast<T>(
                 ((double)val / (double)_generator.max()) * ((double)_end - (double)_start) + (double)_start);
         }
-
     }
 
     void renew_array() {
@@ -81,10 +78,9 @@ class UniformRand : public Parameter<T> {
     }
 
     void renew() override {
-        if (_array.size()>0) {
+        if (_array.size() > 0) {
             renew_array();
-        }
-        else {
+        } else {
             renew_value();
         }
     }
@@ -206,8 +202,7 @@ struct CustomRand : public Parameter<T> {
     void renew() override {
         if (_array.size() > 0) {
             renew_array();
-        }
-        else {
+        } else {
             renew_value();
         }
     }

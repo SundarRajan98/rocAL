@@ -1200,18 +1200,6 @@ extern "C" RocalTensor ROCAL_API_CALL rocalSSDRandomCrop(RocalContext context, R
                                                          RocalTensorLayout output_layout = ROCAL_NONE,
                                                          RocalTensorOutputType output_datatype = ROCAL_UINT8);
 
-/**
- * \brief Cast input tensor from one data type to another 
- * \param context Rocal context
- * \param input Input tensor
- * \param is_output Sets if the output is to be given to user or as intermediate buffer
- * \param output_datatype Datatype of the output tensor
- */
-extern "C" RocalTensor ROCAL_API_CALL rocalCast(RocalContext context, RocalTensor input,
-                                                bool is_output,
-                                                RocalTensorOutputType output_datatype = ROCAL_UINT8);
-
 extern "C" RocalTensor ROCAL_API_CALL rocalSetLayout(RocalContext context, RocalTensor input,
                                                      RocalTensorLayout output_layout = ROCAL_NONE);
-
 #endif  // MIVISIONX_ROCAL_API_AUGMENTATION_H
