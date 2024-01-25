@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2019 - 2022 Advanced Micro Devices, Inc. All rights reserved.
+Copyright (c) 2019 - 2023 Advanced Micro Devices, Inc. All rights reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -207,8 +207,11 @@ class TensorInfo {
             modify_strides();
         }
         _layout = layout;
-        if (_layout == RocalTensorlayout::NONE)
-            set_max_shape();
+        if (_layout == RocalTensorlayout::NHWC || _layout == RocalTensorlayout::NDHWC) {
+            _channels = _dims.back();
+        } else if (_layout == RocalTensorlayout::NCHW || _layout == RocalTensorlayout::NCDHW) {
+            _channels = _dims.at(1);
+        }
     }
     void set_dims(std::vector<size_t>& new_dims) {
         if (_num_of_dims == new_dims.size()) {

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2019 - 2023 Advanced Micro Devices, Inc. All rights reserved.
+Copyright (c) 2019 - 2024 Advanced Micro Devices, Inc. All rights reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,26 +19,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-
 #pragma once
 
-template <typename T>
-class Parameter {
-   public:
-    virtual T default_value() const = 0;
-    ///
-    /// \return returns the updated value of the parameter
-    virtual T get() = 0;
+//! turbojpeg includes
 
-    /// used to internally renew state of the parameter if needed (for random parameters)
-    virtual void renew(){};
-
-    virtual void create_array(unsigned batch_size){};
-
-    virtual std::vector<T> get_array() { return {}; };
-
-    virtual ~Parameter() {}
-    ///
-    /// \return returns if this parameter takes a single value (vs a range of values or many values)
-    virtual bool single_value() const = 0;
-};
+extern "C" {
+#include "jerror.h"  
+#include "jpeglib.h" 
+#include "jpegint.h"
+}
