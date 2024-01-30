@@ -333,18 +333,21 @@ void Tensor::create_roi_tensor_from_handle(void **handle) {
         THROW("Empty ROI handle is passed")
     }
 
-    vx_size num_of_dims = 2;
-    vx_size stride[num_of_dims];
-    std::vector<size_t> roi_dims = {_info.batch_size(), 4};
+    auto _is_image = _info.is_image();
+    vx_size roi_num_of_dims = 2;
+    vx_size num_of_dims = _is_image ? 2 : (_info.num_of_dims() - 1);
+    std::vector<size_t> roi_dims;
+    roi_dims = {_info.batch_size(), num_of_dims * 2};
     if (_info.layout() == RocalTensorlayout::NFCHW || _info.layout() == RocalTensorlayout::NFHWC)
         roi_dims = {_info.dims()[0] * _info.dims()[1], 4};  // For Sequences pre allocating the ROI to N * F to replicate in OpenVX extensions        stride[0] = sizeof(vx_uint32);
+    vx_size stride[roi_num_of_dims];
     stride[0] = sizeof(vx_uint32);
     stride[1] = stride[0] * roi_dims[0];
     vx_enum mem_type = VX_MEMORY_TYPE_HOST;
     if (_info.mem_type() == RocalMemType::HIP)
         mem_type = VX_MEMORY_TYPE_HIP;
 
-    _vx_roi_handle = vxCreateTensorFromHandle(_context, num_of_dims, roi_dims.data(),
+    _vx_roi_handle = vxCreateTensorFromHandle(_context, roi_num_of_dims, roi_dims.data(),
                                               VX_TYPE_UINT32, 0, stride, *handle, mem_type);
     vx_status status;
     if ((status = vxGetStatus((vx_reference)_vx_roi_handle)) != VX_SUCCESS)
