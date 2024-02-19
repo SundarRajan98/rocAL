@@ -352,8 +352,8 @@ def mxnet(path, stick_to_shard=False, pad_last_batch=False):
     return mxnet_metadata
 
 
-def numpy(*inputs, file_root='', num_shards=1,
-          random_shuffle=False, shard_id=0, stick_to_shard=False, pad_last_batch=False):
+def numpy(*inputs, file_root='', files=[], num_shards=1,
+          random_shuffle=False, shard_id=0, stick_to_shard=False, pad_last_batch=False, seed=0):
 
     Pipeline._current_pipeline._reader = "NumpyReader"
     # Output
