@@ -75,7 +75,7 @@ Reader::Status NumpyDataReader::initialize(ReaderConfig desc) {
     // shuffle dataset if set
     _shuffle_time.start();
     if (ret == Reader::Status::OK && _shuffle) {
-        std::shuffle(_file_names.begin(), _file_names.end(), rng);
+        std::random_shuffle(_file_names.begin(), _file_names.end());
     }
     _shuffle_time.end();
     return ret;
@@ -404,7 +404,7 @@ int NumpyDataReader::release() {
 void NumpyDataReader::reset() {
     _shuffle_time.start();
     if (_shuffle) {
-        std::shuffle(_file_names.begin(), _file_names.end(), rng);
+        std::random_shuffle(_file_names.begin(), _file_names.end());
     }
     _shuffle_time.end();
     _read_counter = 0;
