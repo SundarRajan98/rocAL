@@ -357,8 +357,8 @@ def numpy(*inputs, file_root='', files=[], num_shards=1,
 
     Pipeline._current_pipeline._reader = "NumpyReader"
     # Output
-    kwargs_pybind = {"source_path": file_root, "files": files, "is_output": False, "shuffle": random_shuffle,
-                     "loop": False, "decode_size_policy": types.MAX_SIZE, "shard_id": shard_id, "shard_count": num_shards, "seed": seed}
+    kwargs_pybind = {"source_path": file_root, "is_output": False, "shuffle": random_shuffle,
+                     "loop": False, "decode_size_policy": types.MAX_SIZE, "shard_id": shard_id, "shard_count": num_shards}
     numpy_reader_output = b.numpyReaderSourceShard(
         Pipeline._current_pipeline._handle, *(kwargs_pybind.values()))
     return (numpy_reader_output)
