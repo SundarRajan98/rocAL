@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2019 - 2023 Advanced Micro Devices, Inc. All rights reserved.
+Copyright (c) 2019 - 2024 Advanced Micro Devices, Inc. All rights reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,7 +25,7 @@ THE SOFTWARE.
 #include "numpy_loader.h"
 //
 // NumpyLoaderSharded Can be used to run load and decode in multiple shards, each shard by a single loader instance,
-// It improves load and decode performance since each loader loads the images in parallel using an internal thread
+// It improves load and decode performance since each loader loads the numpy arrays in parallel using an internal thread
 //
 class NumpyLoaderSharded : public LoaderModule {
    public:
@@ -56,7 +56,6 @@ class NumpyLoaderSharded : public LoaderModule {
     size_t _shard_count = 1;
     void fast_forward_through_empty_loaders();
     size_t _prefetch_queue_depth;
-
     Tensor *_output_tensor;
     std::shared_ptr<RandomBBoxCrop_MetaDataReader> _randombboxcrop_meta_data_reader = nullptr;
 };

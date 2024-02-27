@@ -222,6 +222,7 @@ void Tensor::update_tensor_roi(const std::vector<std::vector<uint32_t>> &shape) 
         
         unsigned *tensor_shape = _info.roi()[i].end;
         for (unsigned j = 0; j < max_shape.size(); j++) {
+            WRN("Given ROI shape is larger than buffer shape for tensor[" + TOSTR(i) + "] " + TOSTR(shape[i][j]) + " > " + TOSTR(max_shape[j]))
             tensor_shape[j] = shape[i][j] > max_shape[j] ? max_shape[j] : shape[i][j];
         }
     }

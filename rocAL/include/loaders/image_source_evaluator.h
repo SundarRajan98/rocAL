@@ -47,8 +47,8 @@ class ImageSourceEvaluator {
     void set_size_evaluation_policy(MaxSizeEvaluationPolicy arg);
     size_t max_width();
     size_t max_height();
-    std::vector<size_t> max_numpy_dims() { return _max_numpy_dims; };
-    RocalTensorDataType get_numpy_dtype() { return _numpy_dtype; };
+    std::vector<size_t> max_numpy_dims() { return _max_numpy_dims; }
+    RocalTensorDataType get_numpy_dtype() { return _numpy_dtype; }
 
    private:
     class FindMaxSize {

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2019 - 2023 Advanced Micro Devices, Inc. All rights reserved.
+Copyright (c) 2019 - 2024 Advanced Micro Devices, Inc. All rights reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -30,11 +30,10 @@ THE SOFTWARE.
 
 #include "commons.h"
 #include "image_reader.h"
-#include "timing_debug.h"
 
 class NumpyDataReader : public Reader {
    public:
-    //! Looks up the folder which contains the files, amd loads the image names
+    //! Creates a reader which looks up the folder containing the array files, amd loads the file names
     /*!
      \param desc  User provided descriptor containing the files' path.
     */
@@ -98,8 +97,8 @@ class NumpyDataReader : public Reader {
     int _read_counter = 0;
     //!< _file_count_all_shards total_number of files in to figure out the max_batch_size (usually needed for distributed training).
     size_t _file_count_all_shards;
-    std::mutex _cache_mutex_;
-    std::map<std::string, NumpyHeaderData> _header_cache_;
+    std::mutex _cache_mutex;
+    std::map<std::string, NumpyHeaderData> _header_cache;
     const RocalTensorDataType get_numpy_dtype(const std::string& format);
     inline void ignore_spaces(const char*& ptr);
     void decode_header(NumpyHeaderData& target, const std::string& header);
@@ -123,5 +122,4 @@ class NumpyDataReader : public Reader {
     void incremenet_file_id() { _file_id++; }
     void replicate_last_image_to_fill_last_shard();
     void replicate_last_batch_to_pad_partial_shard();
-    TimingDBG _shuffle_time;
 };

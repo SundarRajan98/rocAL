@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2019 - 2023 Advanced Micro Devices, Inc. All rights reserved.
+Copyright (c) 2019 - 2024 Advanced Micro Devices, Inc. All rights reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@ THE SOFTWARE.
 
 #include "filesystem.h"
 
-NumpyDataReader::NumpyDataReader() : _shuffle_time("shuffle_time", DBG_TIMING) {
+NumpyDataReader::NumpyDataReader() {
     _src_dir = nullptr;
     _sub_dir = nullptr;
     _entity = nullptr;
@@ -73,11 +73,9 @@ Reader::Status NumpyDataReader::initialize(ReaderConfig desc) {
     }
     _file_headers.resize(_file_names.size());
     // shuffle dataset if set
-    _shuffle_time.start();
     if (ret == Reader::Status::OK && _shuffle) {
         std::random_shuffle(_file_names.begin(), _file_names.end());
     }
-    _shuffle_time.end();
     return ret;
 }
 
@@ -111,9 +109,9 @@ size_t NumpyDataReader::open() {
 }
 
 bool NumpyDataReader::get_cached_header(const std::string& file_name, NumpyHeaderData& header) {
-    std::unique_lock<std::mutex> cache_lock(_cache_mutex_);
-    auto it = _header_cache_.find(file_name);
-    if (it == _header_cache_.end()) {
+    std::unique_lock<std::mutex> cache_lock(_cache_mutex);
+    auto it = _header_cache.find(file_name);
+    if (it == _header_cache.end()) {
         return false;
     } else {
         header = it->second;
@@ -122,8 +120,8 @@ bool NumpyDataReader::get_cached_header(const std::string& file_name, NumpyHeade
 }
 
 void NumpyDataReader::update_header_cache(const std::string& file_name, const NumpyHeaderData& value) {
-    std::unique_lock<std::mutex> cache_lock(_cache_mutex_);
-    _header_cache_[file_name] = value;
+    std::unique_lock<std::mutex> cache_lock(_cache_mutex);
+    _header_cache[file_name] = value;
 }
 
 const RocalTensorDataType NumpyDataReader::get_numpy_dtype(const std::string& format) {
@@ -279,7 +277,7 @@ void NumpyDataReader::read_header(NumpyHeaderData& parsed_header, std::string fi
         THROW("Can not read header.");
     token[n_read] = '\0';
 
-    // check if heqder is too short
+    // check if header is too short
     std::string header = std::string(token.data());
     if (header.find_first_of("NUMPY") == std::string::npos)
         THROW("File is not a numpy file.");
@@ -294,7 +292,7 @@ void NumpyDataReader::read_header(NumpyHeaderData& parsed_header, std::string fi
     int64_t offset = 6 + 1 + 1 + 2;
     // the header_len can be 4GiB according to the NPYv2 file format
     // specification: https://numpy.org/neps/nep-0001-npy-format.html
-    // while this allocation could be sizable, it is performed on the host.
+    // while this allocation could be large, it is performed on the host.
     token.resize(header_len + 1);
     if (std::fseek(_current_fPtr, offset, SEEK_SET))
         THROW("Seek operation failed: " + std::strerror(errno));
@@ -402,11 +400,9 @@ int NumpyDataReader::release() {
 }
 
 void NumpyDataReader::reset() {
-    _shuffle_time.start();
     if (_shuffle) {
         std::random_shuffle(_file_names.begin(), _file_names.end());
     }
-    _shuffle_time.end();
     _read_counter = 0;
     _curr_file_idx = 0;
 }
@@ -500,6 +496,5 @@ Reader::Status NumpyDataReader::open_folder() {
 size_t NumpyDataReader::get_file_shard_id() {
     if (_batch_count == 0 || _shard_count == 0)
         THROW("Shard (Batch) size cannot be set to 0")
-    // return (_file_id / (_batch_count)) % _shard_count;
     return _file_id % _shard_count;
 }

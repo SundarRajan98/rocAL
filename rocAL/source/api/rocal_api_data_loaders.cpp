@@ -68,25 +68,10 @@ evaluate_image_data_set(RocalImageSizeEvaluationPolicy decode_size_policy, Stora
 };
 
 std::vector<size_t>
-evaluate_numpy_data_set(RocalImageSizeEvaluationPolicy decode_size_policy, StorageType storage_type,
+evaluate_numpy_data_set(StorageType storage_type,
                         DecoderType decoder_type, const std::string &source_path)
 {
-    auto translate_image_size_policy = [](RocalImageSizeEvaluationPolicy decode_size_policy)
-    {
-        switch(decode_size_policy)
-        {
-            case ROCAL_USE_MAX_SIZE:
-            case ROCAL_USE_MAX_SIZE_RESTRICTED:
-                return MaxSizeEvaluationPolicy::MAXIMUM_FOUND_SIZE;
-            case ROCAL_USE_MOST_FREQUENT_SIZE:
-                return MaxSizeEvaluationPolicy::MOST_FREQUENT_SIZE;
-            default:
-                return MaxSizeEvaluationPolicy::MAXIMUM_FOUND_SIZE;
-        }
-    };
-
     ImageSourceEvaluator source_evaluator;
-    source_evaluator.set_size_evaluation_policy(translate_image_size_policy(decode_size_policy));
     auto reader_cfg = ReaderConfig(storage_type, source_path);
     if (source_evaluator.create(reader_cfg) != ImageSourceEvaluatorStatus::OK)
         THROW("Initializing file source input evaluator failed ")
@@ -153,6 +138,25 @@ auto convert_decoder_mode = [](RocalDecodeDevice decode_mode) {
         default:
 
             THROW("Unsupported decoder mode" + TOSTR(decode_mode))
+    }
+};
+
+auto convert_data_type = [](int data_type) {
+    switch (data_type) {
+        case 0:
+            return RocalTensorDataType::FP32;
+        case 1:
+            return RocalTensorDataType::FP16;
+        case 2:
+            return RocalTensorDataType::UINT8;
+        case 3:
+            return RocalTensorDataType::INT8;
+        case 4:
+            return RocalTensorDataType::UINT32;
+        case 5:
+            return RocalTensorDataType::INT32;
+        default:
+            THROW("Unsupported data type" + TOSTR(data_type))
     }
 };
 
@@ -1634,37 +1638,23 @@ rocalNumpyFileSource(
     unsigned internal_shard_count,
     bool is_output,
     bool shuffle,
-    bool loop,
-    RocalImageSizeEvaluationPolicy decode_size_policy) {
+    bool loop) {
     Tensor* output = nullptr;
     auto context = static_cast<Context*>(p_context);
     try {
-        auto max_dimensions = evaluate_numpy_data_set(decode_size_policy, StorageType::NUMPY_DATA, DecoderType::SKIP_DECODE,
+        auto max_dimensions = evaluate_numpy_data_set(StorageType::NUMPY_DATA, DecoderType::SKIP_DECODE,
                                                       source_path);
-
-        RocalTensorlayout tensor_format = RocalTensorlayout::NONE;
-        RocalTensorDataType tensor_data_type;
-        std::unordered_map<int, RocalTensorDataType> data_type_map = {
-            {0, RocalTensorDataType::FP32},
-            {1, RocalTensorDataType::FP16},
-            {2, RocalTensorDataType::UINT8},
-            {3, RocalTensorDataType::INT8},
-            {4, RocalTensorDataType::UINT32},
-            {5, RocalTensorDataType::INT32},
-        };
         auto dtype = max_dimensions.at(max_dimensions.size() - 1);
         max_dimensions.pop_back();
-        tensor_data_type = data_type_map[dtype];
+        auto tensor_data_type = convert_data_type(dtype);
         unsigned num_of_dims = max_dimensions.size() + 1;
-        std::vector<size_t> dims;
-        dims.resize(num_of_dims);
+        std::vector<size_t> dims(num_of_dims);
         dims[0] = context->user_batch_size();
         for (uint i = 0; i < max_dimensions.size(); i++)
             dims[i + 1] = max_dimensions[i];
         auto info = TensorInfo(std::vector<size_t>(std::move(dims)),
                                context->master_graph->mem_type(),
                                tensor_data_type);
-        info.set_tensor_layout(tensor_format);
         info.set_max_shape();
         output = context->master_graph->create_loader_output_tensor(info);
 
@@ -1690,7 +1680,6 @@ rocalNumpyFileSourceSingleShard(
     bool is_output,
     bool shuffle,
     bool loop,
-    RocalImageSizeEvaluationPolicy decode_size_policy,
     unsigned shard_id,
     unsigned shard_count) {
     Tensor* output = nullptr;
@@ -1702,32 +1691,19 @@ rocalNumpyFileSourceSingleShard(
         if (shard_id >= shard_count)
             THROW("Shard id should be smaller than shard count")
 
-        auto max_dimensions = evaluate_numpy_data_set(decode_size_policy, StorageType::NUMPY_DATA, DecoderType::SKIP_DECODE,
+        auto max_dimensions = evaluate_numpy_data_set(StorageType::NUMPY_DATA, DecoderType::SKIP_DECODE,
                                                       source_path);
-
-        RocalTensorlayout tensor_format = RocalTensorlayout::NONE;
-        RocalTensorDataType tensor_data_type;
-        std::unordered_map<int, RocalTensorDataType> data_type_map = {
-            {0, RocalTensorDataType::FP32},
-            {1, RocalTensorDataType::FP16},
-            {2, RocalTensorDataType::UINT8},
-            {3, RocalTensorDataType::INT8},
-            {4, RocalTensorDataType::UINT32},
-            {5, RocalTensorDataType::INT32},
-        };
         auto dtype = max_dimensions.at(max_dimensions.size() - 1);
         max_dimensions.pop_back();
-        tensor_data_type = data_type_map[dtype];
+        auto tensor_data_type = convert_data_type(dtype);
         unsigned num_of_dims = max_dimensions.size() + 1;
-        std::vector<size_t> dims;
-        dims.resize(num_of_dims);
+        std::vector<size_t> dims(num_of_dims);
         dims[0] = context->user_batch_size();
         for (uint i = 0; i < max_dimensions.size(); i++)
             dims[i + 1] = max_dimensions[i];
         auto info = TensorInfo(std::vector<size_t>(std::move(dims)),
                                context->master_graph->mem_type(),
                                tensor_data_type);
-        info.set_tensor_layout(tensor_format);
         info.set_max_shape();
         output = context->master_graph->create_loader_output_tensor(info);
 

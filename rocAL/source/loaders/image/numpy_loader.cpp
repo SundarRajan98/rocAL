@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2019 - 2023 Advanced Micro Devices, Inc. All rights reserved.
+Copyright (c) 2019 - 2024 Advanced Micro Devices, Inc. All rights reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +36,7 @@ NumpyLoader::NumpyLoader(void *dev_resources) : _circ_buff(dev_resources),
     _output_mem_size = 0;
     _batch_size = 1;
     _is_initialized = false;
-    _remaining_image_count = 0;
+    _remaining_count = 0;
     _device_id = 0;
 }
 
@@ -64,7 +64,7 @@ void NumpyLoader::set_gpu_device_id(int device_id) {
 
 size_t
 NumpyLoader::remaining_count() {
-    return _remaining_image_count;
+    return _remaining_count;
 }
 
 void NumpyLoader::reset() {
@@ -92,12 +92,12 @@ void NumpyLoader::de_init() {
     _output_mem_size = 0;
     _batch_size = 1;
     _is_initialized = false;
-    _remaining_image_count = 0;
+    _remaining_count = 0;
 }
 
 LoaderModuleStatus
 NumpyLoader::load_next() {
-    return update_output_image();
+    return update_output_tensor();
 }
 
 void NumpyLoader::set_output(Tensor *output_tensor) {
@@ -139,7 +139,6 @@ void NumpyLoader::initialize(ReaderConfig reader_cfg, DecoderConfig decoder_cfg,
         throw;
     }
     _decoded_img_info._image_names.resize(_batch_size);
-    _crop_image_info._crop_image_coords.resize(_batch_size);
     _tensor_roi.resize(_batch_size);
     _circ_buff.init(_mem_type, _output_mem_size, _prefetch_queue_depth);
     _is_initialized = true;
@@ -150,7 +149,7 @@ void NumpyLoader::start_loading() {
     if (!_is_initialized)
         THROW("start_loading() should be called after initialize() function is called")
 
-    _remaining_image_count = _reader->count_items();
+    _remaining_count = _reader->count_items();
     _internal_thread_running = true;
     _load_thread = std::thread(&NumpyLoader::load_routine, this);
 }
@@ -220,8 +219,9 @@ NumpyLoader::load_routine() {
 bool NumpyLoader::is_out_of_data() {
     return (remaining_count() < _batch_size);
 }
+
 LoaderModuleStatus
-NumpyLoader::update_output_image() {
+NumpyLoader::update_output_tensor() {
     LoaderModuleStatus status = LoaderModuleStatus::OK;
 
     if (is_out_of_data())
@@ -252,11 +252,9 @@ NumpyLoader::update_output_image() {
     }
     _output_names = _output_decoded_img_info._image_names;
     _output_tensor->update_tensor_roi(_tensor_roi);
-    // _output_tensor->update_tensor_roi(_output_decoded_img_info._roi_width, _output_decoded_img_info._roi_height);
-    // _output_tensor->update_tensor_orig_roi(_output_decoded_img_info._original_width, _output_decoded_img_info._original_height);
     _circ_buff.pop();
     if (!_loop)
-        _remaining_image_count -= _batch_size;
+        _remaining_count -= _batch_size;
 
     return status;
 }

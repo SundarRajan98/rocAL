@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2019 - 2023 Advanced Micro Devices, Inc. All rights reserved.
+Copyright (c) 2019 - 2024 Advanced Micro Devices, Inc. All rights reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -30,8 +30,8 @@ THE SOFTWARE.
 #include "commons.h"
 #include "image_read_and_decode.h"
 //
-// NumpyLoader runs an internal thread for loading an decoding of numpy arrays asynchronously
-// it uses a circular buffer to store decoded numpy arrays for the user
+// NumpyLoader runs an internal thread for loading of numpy arrays asynchronously
+// it uses a circular buffer to store loaded numpy arrays for the user
 class NumpyLoader : public LoaderModule {
    public:
     explicit NumpyLoader(void* dev_resources);
@@ -59,7 +59,7 @@ class NumpyLoader : public LoaderModule {
     bool is_out_of_data();
     void de_init();
     void stop_internal_thread();
-    LoaderModuleStatus update_output_image();
+    LoaderModuleStatus update_output_tensor();
     LoaderModuleStatus load_routine();
     std::shared_ptr<Reader> _reader;
     std::shared_ptr<RandomBBoxCrop_MetaDataReader> _randombboxcrop_meta_data_reader = nullptr;
@@ -67,7 +67,6 @@ class NumpyLoader : public LoaderModule {
     std::vector<std::string> _output_names;  //!< image name/ids that are stores in the _output_image
     size_t _output_mem_size;
     MetaDataBatch* _meta_data = nullptr;  //!< The output of the meta_data_graph,
-    std::vector<std::vector<float>> _bbox_coords;
     bool _internal_thread_running;
     size_t _batch_size;
     size_t _image_size;
@@ -81,10 +80,10 @@ class NumpyLoader : public LoaderModule {
     TimingDBG _file_load_time, _swap_handle_time;
     bool _is_initialized;
     bool _stopped = false;
-    bool _loop;                     //<! If true the reader will wrap around at the end of the media (files/images/...) and wouldn't stop
+    bool _loop;                     //<! If true the reader will wrap around at the end of the media (files/samples/...) and wouldn't stop
     size_t _prefetch_queue_depth;   // Used for circular buffer's internal buffer
-    size_t _image_counter = 0;      //!< How many images have been loaded already
-    size_t _remaining_image_count;  //!< How many images are there yet to be loaded
+    size_t _image_counter = 0;      //!< How many samples have been loaded already
+    size_t _remaining_count;  //!< How many samples are there yet to be loaded
     bool _decoder_keep_original = false;
     int _device_id;
     std::vector<std::vector<unsigned>> _tensor_roi;

@@ -110,6 +110,8 @@ enum class RocalROIType {
 /*! \brief Tensor 3D ROI type
  *
  * currently supports following formats
+ * LTFRBB - Left-Top-Front-Right-Bottom-Back
+ * XYZWHD - X-Y-Z-Width-Height-Depth
  */
 enum class Rocal3DROIType {
     LTFRBB = 0,
