@@ -323,7 +323,7 @@ int test(int test_case, int reader_type, const char *path, const char *outName, 
         {
             std::cout << ">>>>>>> Running Numpy reader" << std::endl;
             pipeline_type = 4;
-            decoded_output = rocalNumpyFileSource(handle, path, num_threads, {}, false, false, false, ROCAL_USE_MAX_SIZE);
+            decoded_output = rocalNumpyFileSource(handle, path, num_threads);
         } break;
         default: {
             std::cout << ">>>>>>> Running IMAGE READER" << std::endl;
@@ -775,7 +775,7 @@ int test(int test_case, int reader_type, const char *path, const char *outName, 
             case 4: {  // numpy reader pipeline
                 RocalTensorList output_tensor_list;
                 output_tensor_list = rocalGetOutputTensors(handle);
-                for (int idx = 0; idx < output_tensor_list->size(); idx++) {
+                for (uint64_t idx = 0; idx < output_tensor_list->size(); idx++) {
                     unsigned char *out_buffer;
                     if (output_tensor_list->at(idx)->data_type() == RocalTensorOutputType::ROCAL_FP32) {
                         float *out_f_buffer;

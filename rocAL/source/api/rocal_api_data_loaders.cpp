@@ -28,6 +28,7 @@ THE SOFTWARE.
 #include "commons.h"
 #include "context.h"
 #include "image_source_evaluator.h"
+#include "numpy_source_evaluator.h"
 #include "node_cifar10_loader.h"
 #include "node_copy.h"
 #include "node_fused_jpeg_crop.h"
@@ -68,17 +69,15 @@ evaluate_image_data_set(RocalImageSizeEvaluationPolicy decode_size_policy, Stora
 };
 
 std::vector<size_t>
-evaluate_numpy_data_set(StorageType storage_type,
-                        DecoderType decoder_type, const std::string &source_path)
+evaluate_numpy_data_set(StorageType storage_type, const std::string &source_path)
 {
-    ImageSourceEvaluator source_evaluator;
+    NumpySourceEvaluator source_evaluator;
     auto reader_cfg = ReaderConfig(storage_type, source_path);
-    if (source_evaluator.create(reader_cfg) != ImageSourceEvaluatorStatus::OK)
+    if (source_evaluator.create(reader_cfg) != NumpySourceEvaluatorStatus::OK)
         THROW("Initializing file source input evaluator failed ")
     auto max_dims = source_evaluator.max_numpy_dims();
     int data_type = (int)source_evaluator.get_numpy_dtype();
     max_dims.push_back(data_type);
-
     return max_dims;
 };
 
@@ -1636,14 +1635,14 @@ rocalNumpyFileSource(
     RocalContext p_context,
     const char* source_path,
     unsigned internal_shard_count,
+    RocalTensorLayout tensor_layout,
     bool is_output,
     bool shuffle,
     bool loop) {
     Tensor* output = nullptr;
     auto context = static_cast<Context*>(p_context);
     try {
-        auto max_dimensions = evaluate_numpy_data_set(StorageType::NUMPY_DATA, DecoderType::SKIP_DECODE,
-                                                      source_path);
+        auto max_dimensions = evaluate_numpy_data_set(StorageType::NUMPY_DATA, source_path);
         auto dtype = max_dimensions.at(max_dimensions.size() - 1);
         max_dimensions.pop_back();
         auto tensor_data_type = convert_data_type(dtype);
@@ -1656,6 +1655,8 @@ rocalNumpyFileSource(
                                context->master_graph->mem_type(),
                                tensor_data_type);
         info.set_max_shape();
+        RocalTensorlayout tensor_format = static_cast<RocalTensorlayout>(tensor_layout);
+        info.set_tensor_layout(tensor_format);
         output = context->master_graph->create_loader_output_tensor(info);
 
         context->master_graph->add_node<NumpyLoaderNode>({}, {output})->init(internal_shard_count, source_path, StorageType::NUMPY_DATA, DecoderType::SKIP_DECODE, shuffle, loop, context->user_batch_size(), context->master_graph->mem_type());
@@ -1677,6 +1678,7 @@ RocalTensor ROCAL_API_CALL
 rocalNumpyFileSourceSingleShard(
     RocalContext p_context,
     const char* source_path,
+    RocalTensorLayout tensor_layout,
     bool is_output,
     bool shuffle,
     bool loop,
@@ -1691,8 +1693,7 @@ rocalNumpyFileSourceSingleShard(
         if (shard_id >= shard_count)
             THROW("Shard id should be smaller than shard count")
 
-        auto max_dimensions = evaluate_numpy_data_set(StorageType::NUMPY_DATA, DecoderType::SKIP_DECODE,
-                                                      source_path);
+        auto max_dimensions = evaluate_numpy_data_set(StorageType::NUMPY_DATA, source_path);
         auto dtype = max_dimensions.at(max_dimensions.size() - 1);
         max_dimensions.pop_back();
         auto tensor_data_type = convert_data_type(dtype);
@@ -1705,6 +1706,8 @@ rocalNumpyFileSourceSingleShard(
                                context->master_graph->mem_type(),
                                tensor_data_type);
         info.set_max_shape();
+        RocalTensorlayout tensor_format = static_cast<RocalTensorlayout>(tensor_layout);
+        info.set_tensor_layout(tensor_format);
         output = context->master_graph->create_loader_output_tensor(info);
 
         context->master_graph->add_node<NumpyLoaderSingleShardNode>({}, {output})->init(shard_id, shard_count, source_path, StorageType::NUMPY_DATA, DecoderType::SKIP_DECODE, shuffle, loop, context->user_batch_size(), context->master_graph->mem_type());

@@ -29,7 +29,7 @@ THE SOFTWARE.
 #include "circular_buffer.h"
 #include "commons.h"
 #include "image_read_and_decode.h"
-//
+
 // NumpyLoader runs an internal thread for loading of numpy arrays asynchronously
 // it uses a circular buffer to store loaded numpy arrays for the user
 class NumpyLoader : public LoaderModule {

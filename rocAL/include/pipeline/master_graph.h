@@ -392,6 +392,9 @@ inline std::shared_ptr<VideoLoaderSingleShardNode> MasterGraph::add_node(const s
     return node;
 }
 
+/*
+ * Explicit specialization for NumpyLoaderNode
+ */
 template <>
 inline std::shared_ptr<NumpyLoaderNode> MasterGraph::add_node(const std::vector<Tensor *> &inputs, const std::vector<Tensor *> &outputs) {
     if (_loader_module)
@@ -410,6 +413,9 @@ inline std::shared_ptr<NumpyLoaderNode> MasterGraph::add_node(const std::vector<
     return node;
 }
 
+/*
+ * Explicit specialization for NumpyLoaderSingleShardNode
+ */
 template <>
 inline std::shared_ptr<NumpyLoaderSingleShardNode> MasterGraph::add_node(const std::vector<Tensor *> &inputs, const std::vector<Tensor *> &outputs) {
     if (_loader_module)

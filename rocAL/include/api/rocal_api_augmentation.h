@@ -1098,14 +1098,4 @@ extern "C" RocalTensor ROCAL_API_CALL rocalSSDRandomCrop(RocalContext context, R
                                                          RocalTensorLayout output_layout = ROCAL_NONE,
                                                          RocalTensorOutputType output_datatype = ROCAL_UINT8);
 
-/*! \brief Sets the layout for the input tensor.
- * \ingroup group_rocal_augmentations
- * \param [in] context Rocal context
- * \param [in] input Input Rocal tensor
- * \param [in] output_layout the layout of the output tensor
- * \return RocalTensor
- */
-extern "C" RocalTensor ROCAL_API_CALL rocalSetLayout(RocalContext context, RocalTensor input,
-                                                     RocalTensorLayout output_layout = ROCAL_NONE);
-
 #endif  // MIVISIONX_ROCAL_API_AUGMENTATION_H

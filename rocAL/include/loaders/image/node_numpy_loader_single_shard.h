@@ -21,7 +21,6 @@ THE SOFTWARE.
 */
 
 #pragma once
-#include "graph.h"
 #include "node.h"
 #include "numpy_loader_sharded.h"
 
@@ -34,8 +33,8 @@ class NumpyLoaderSingleShardNode : public Node {
     /// \param  user_shard_id shard id from user
     /// \param source_path Defines the path that includes the numpy array dataset
     /// \param load_batch_count Defines the quantum count of the numpy arrays to be loaded. It's usually equal to the user's batch size.
-    /// The loader will repeat samples if necessary to be able to have samples in multiples of the load_batch_count,
-    /// for example if there are 10 samples in the dataset and load_batch_count is 3, the loader repeats 2 samples as if there are 12 samples available.
+    /// The loader will repeat numpy arrays if necessary to be able to have numpy arrays in multiples of the load_batch_count,
+    /// for example if there are 10 numpy arrays in the dataset and load_batch_count is 3, the loader repeats 2 numpy arrays as if there are 12 numpy arrays available.
     void init(unsigned shard_id, unsigned shard_count, const std::string &source_path,
               StorageType storage_type, DecoderType decoder_type, bool shuffle, bool loop,
               size_t load_batch_count, RocalMemType mem_type);
