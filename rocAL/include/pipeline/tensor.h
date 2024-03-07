@@ -65,9 +65,13 @@ void allocate_host_or_pinned_mem(void** ptr, size_t size, RocalMemType mem_type)
 struct Roi {
     unsigned* get_ptr() { return _roi_ptr.get(); }
     Roi2DCords* get_2D_roi() {
-        if (_roi_no_of_dims != 2)
-            THROW("ROI has more than 2 dimensions. Cannot return Roi2DCords")
-        // ROI parsing for 2D coords to be added
+        auto out_index = sizeof(Roi2DCords);
+        for (unsigned i = 0; i < _batch_size; i++) {
+            int idx = i * _roi_no_of_dims * 2;
+            unsigned *tensor_shape = _roi_buf + idx + _roi_no_of_dims;
+            _roi_2D_buf[i * out_index + 2] = tensor_shape[0];
+            _roi_2D_buf[i * out_index + 3] = tensor_shape[1];
+        }
         return reinterpret_cast<Roi2DCords*>(_roi_2D_buf);
     }
     void set_ptr(unsigned* ptr, RocalMemType mem_type, unsigned batch_size, unsigned no_of_dims = 0) {
@@ -75,7 +79,7 @@ struct Roi {
         _batch_size = batch_size;
         _roi_buffer_size = batch_size * _roi_no_of_dims * 2 * sizeof(unsigned); // 2 denotes, one coordinate each for begin and end
         _roi_buf = ptr;
-        _roi_2D_buf = (unsigned*) malloc(batch_size * sizeof(Roi2DCords));
+        allocate_host_or_pinned_mem((void **)&_roi_2D_buf, batch_size * _roi_no_of_dims * 2 * sizeof(unsigned), mem_type);   
         if (mem_type == RocalMemType::HIP) {
 #if ENABLE_HIP
             _roi_ptr.reset(_roi_buf, hipHostFree);
@@ -197,6 +201,7 @@ class TensorInfo {
             get_modified_dims_from_layout(_layout, layout, new_dims);
             _dims = new_dims;
             modify_strides();
+            set_max_shape();
         }
         _layout = layout;
         if (_layout == RocalTensorlayout::NHWC) {
