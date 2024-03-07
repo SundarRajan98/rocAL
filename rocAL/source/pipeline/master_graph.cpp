@@ -383,12 +383,12 @@ MasterGraph::output_color_format() {
 
 size_t
 MasterGraph::output_width() {
-    return _output_tensor_list[0]->info().max_shape()[0];
+    return _output_tensor_list[0]->info().width_height()[0];
 }
 
 size_t
 MasterGraph::output_height() {
-    return _output_tensor_list[0]->info().max_shape()[1];
+    return _output_tensor_list[0]->info().width_height()[1];
 }
 
 void MasterGraph::sequence_start_frame_number(std::vector<size_t> &sequence_start_framenum) {

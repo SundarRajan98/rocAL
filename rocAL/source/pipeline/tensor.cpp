@@ -108,18 +108,13 @@ bool operator==(const TensorInfo &rhs, const TensorInfo &lhs) {
 
 void TensorInfo::reset_tensor_roi_buffers() {
     unsigned *roi_buf;
-    auto roi_no_of_dims = _is_image ? 2 : (_num_of_dims - 1);
+    auto roi_no_of_dims = (_layout == RocalTensorlayout::NFCHW || _layout == RocalTensorlayout::NFHWC) ? 3 : _num_of_dims - 1;
     auto roi_size = (_layout == RocalTensorlayout::NFCHW || _layout == RocalTensorlayout::NFHWC) ? _dims[0] * _dims[1] : _batch_size;  // For Sequences pre allocating the ROI to N * F to replicate in OpenVX extensions
     allocate_host_or_pinned_mem((void **)&roi_buf, roi_size * roi_no_of_dims * 2 * sizeof(unsigned), _mem_type);                       // 2 denotes, one coordinate each for begin and end
     _roi.set_ptr(roi_buf, _mem_type, roi_size, roi_no_of_dims);
-    if (_is_image) {
-        Roi2DCords *roi = _roi.get_2D_roi();
-        for (unsigned i = 0; i < _batch_size; i++) {
-            roi[i].xywh.w = _max_shape.at(0);
-            roi[i].xywh.h = _max_shape.at(1);
-        }
-    } else {
-        // TODO - For other tensor types
+    for (unsigned i = 0; i < _batch_size; i++) {
+        unsigned *tensor_shape = _roi[i].end;
+        tensor_shape[i] = _max_shape[i];
     }
 }
 
@@ -175,11 +170,19 @@ TensorInfo::TensorInfo(std::vector<size_t> dims,
 
 void Tensor::update_tensor_roi(const std::vector<uint32_t> &width,
                                const std::vector<uint32_t> &height) {
+ 
     if (_info.is_image()) {
         auto max_shape = _info.max_shape();
-        unsigned max_width = max_shape.at(0);
-        unsigned max_height = max_shape.at(1);
-        Roi2DCords *roi = _info.roi().get_2D_roi();
+        auto layout = _info.layout();
+        unsigned max_width = 0;
+        unsigned max_height = 0;
+        if (layout == RocalTensorlayout::NFHWC || layout == RocalTensorlayout::NHWC) {
+            max_height = max_shape.at(0);
+            max_width = max_shape.at(1);
+        } else if (layout == RocalTensorlayout::NFCHW || layout == RocalTensorlayout::NCHW) {
+            max_height = max_shape.at(1);
+            max_width = max_shape.at(2);
+        }
 
         if (width.size() != height.size())
             THROW("Batch size of Tensor height and width info does not match")
@@ -188,17 +191,33 @@ void Tensor::update_tensor_roi(const std::vector<uint32_t> &width,
             THROW("The batch size of actual Tensor height and width different from Tensor batch size " + TOSTR(width.size()) + " != " + TOSTR(info().batch_size()))
 
         for (unsigned i = 0; i < info().batch_size(); i++) {
-            if (width[i] > max_width) {
-                WRN("Given ROI width is larger than buffer width for tensor[" + TOSTR(i) + "] " + TOSTR(width[i]) + " > " + TOSTR(max_width))
-                roi[i].xywh.w = max_width;
-            } else {
-                roi[i].xywh.w = width[i];
-            }
-            if (height[i] > max_height) {
-                WRN("Given ROI height is larger than buffer height for tensor[" + TOSTR(i) + "] " + TOSTR(height[i]) + " > " + TOSTR(max_height))
-                roi[i].xywh.h = max_height;
-            } else {
-                roi[i].xywh.h = height[i];
+            unsigned *tensor_shape = _info.roi()[i].end;
+            if (layout == RocalTensorlayout::NFHWC || layout == RocalTensorlayout::NHWC) {
+                if (height[i] > max_height) {
+                    WRN("Given ROI height is larger than buffer height for tensor[" + TOSTR(i) + "] " + TOSTR(height[i]) + " > " + TOSTR(max_height))
+                    tensor_shape[0] = max_height;
+                } else {
+                    tensor_shape[0] = height[i];
+                }
+                if (width[i] > max_width) {
+                    WRN("Given ROI width is larger than buffer width for tensor[" + TOSTR(i) + "] " + TOSTR(width[i]) + " > " + TOSTR(max_width))
+                    tensor_shape[1] = max_width;
+                } else {
+                    tensor_shape[1] = width[i];
+                }
+            } else if (layout == RocalTensorlayout::NFCHW || layout == RocalTensorlayout::NCHW) {
+                if (height[i] > max_height) {
+                    WRN("Given ROI height is larger than buffer height for tensor[" + TOSTR(i) + "] " + TOSTR(height[i]) + " > " + TOSTR(max_height))
+                    tensor_shape[1] = max_height;
+                } else {
+                    tensor_shape[1] = height[i];
+                }
+                if (width[i] > max_width) {
+                    WRN("Given ROI width is larger than buffer width for tensor[" + TOSTR(i) + "] " + TOSTR(width[i]) + " > " + TOSTR(max_width))
+                    tensor_shape[2] = max_width;
+                } else {
+                    tensor_shape[2] = width[i];
+                }
             }
         }
     }
@@ -247,7 +266,7 @@ int Tensor::create_virtual(vx_context context, vx_graph graph) {
     _vx_handle = vxCreateVirtualTensor(graph, _info.num_of_dims(), _info.dims().data(), interpret_tensor_data_type(_info.data_type()), 0);
     vx_status status;
     if ((status = vxGetStatus((vx_reference)_vx_handle)) != VX_SUCCESS)
-        THROW("Error: vxCreateVirtualTensor(input:[" + TOSTR(_info.max_shape().at(0)) + "W" + TOSTR(_info.max_shape().at(1)) + "H" + "]): failed " + TOSTR(status))
+        THROW("Error: vxCreateVirtualTensor(input:[" + TOSTR(_info.width_height().at(0)) + "W" + TOSTR(_info.width_height().at(1)) + "H" + "]): failed " + TOSTR(status))
 
     _info._type = TensorInfo::Type::VIRTUAL;
     void *roi_handle = reinterpret_cast<void *>(_info.roi().get_ptr());
@@ -307,18 +326,20 @@ void Tensor::create_roi_tensor_from_handle(void **handle) {
         THROW("Empty ROI handle is passed")
     }
 
-    vx_size num_of_dims = 2;
-    vx_size stride[num_of_dims];
-    std::vector<size_t> roi_dims = {_info.batch_size(), 4};
+    vx_size roi_num_of_dims = 2;
+    vx_size num_of_dims = _info.num_of_dims() - 1;
+    std::vector<size_t> roi_dims;
+    roi_dims = {_info.batch_size(), num_of_dims * 2};
     if (_info.layout() == RocalTensorlayout::NFCHW || _info.layout() == RocalTensorlayout::NFHWC)
-        roi_dims = {_info.dims()[0] * _info.dims()[1], 4};  // For Sequences pre allocating the ROI to N * F to replicate in OpenVX extensions        stride[0] = sizeof(vx_uint32);
+        roi_dims = {_info.dims()[0] * _info.dims()[1], 6};  // For Sequences pre allocating the ROI to N * F to replicate in OpenVX extensions        stride[0] = sizeof(vx_uint32);
+    vx_size stride[roi_num_of_dims];
     stride[0] = sizeof(vx_uint32);
     stride[1] = stride[0] * roi_dims[0];
     vx_enum mem_type = VX_MEMORY_TYPE_HOST;
     if (_info.mem_type() == RocalMemType::HIP)
         mem_type = VX_MEMORY_TYPE_HIP;
 
-    _vx_roi_handle = vxCreateTensorFromHandle(_context, num_of_dims, roi_dims.data(),
+    _vx_roi_handle = vxCreateTensorFromHandle(_context, roi_num_of_dims, roi_dims.data(),
                                               VX_TYPE_UINT32, 0, stride, *handle, mem_type);
     vx_status status;
     if ((status = vxGetStatus((vx_reference)_vx_roi_handle)) != VX_SUCCESS)

@@ -67,12 +67,15 @@ struct Roi {
     Roi2DCords* get_2D_roi() {
         if (_roi_no_of_dims != 2)
             THROW("ROI has more than 2 dimensions. Cannot return Roi2DCords")
-        return reinterpret_cast<Roi2DCords*>(_roi_ptr.get());
+        // ROI parsing for 2D coords to be added
+        return reinterpret_cast<Roi2DCords*>(_roi_2D_buf);
     }
     void set_ptr(unsigned* ptr, RocalMemType mem_type, unsigned batch_size, unsigned no_of_dims = 0) {
         if (!_roi_no_of_dims) _roi_no_of_dims = no_of_dims;
+        _batch_size = batch_size;
         _roi_buffer_size = batch_size * _roi_no_of_dims * 2 * sizeof(unsigned); // 2 denotes, one coordinate each for begin and end
         _roi_buf = ptr;
+        _roi_2D_buf = (unsigned*) malloc(batch_size * sizeof(Roi2DCords));
         if (mem_type == RocalMemType::HIP) {
 #if ENABLE_HIP
             _roi_ptr.reset(_roi_buf, hipHostFree);
@@ -107,6 +110,8 @@ struct Roi {
     unsigned _roi_no_of_dims = 0;
     RoiCords _roi_coords;
     size_t _roi_buffer_size = 0;
+    unsigned _batch_size = 0;
+    unsigned* _roi_2D_buf = nullptr;
 };
 
 /*! \brief Holds the information about a Tensor */
@@ -159,23 +164,24 @@ class TensorInfo {
     void set_max_shape() {
         if (_is_metadata) return;  // For metadata tensors max shape is not required
         if (_layout != RocalTensorlayout::NONE) {
-            if (!_max_shape.size()) _max_shape.resize(2);  // Since 2 values will be stored in the vector
             _is_image = true;
             if (_layout == RocalTensorlayout::NHWC) {
-                _max_shape[0] = _dims.at(2);
-                _max_shape[1] = _dims.at(1);
+                if (!_max_shape.size()) _max_shape.resize(_num_of_dims - 1, 0); 
+                _max_shape.assign(_dims.begin() + 1, _dims.end());
                 _channels = _dims.at(3);
             } else if (_layout == RocalTensorlayout::NCHW) {
-                _max_shape[0] = _dims.at(3);
-                _max_shape[1] = _dims.at(2);
+                if (!_max_shape.size()) _max_shape.resize(_num_of_dims - 1, 0); 
+                _max_shape.assign(_dims.begin() + 1, _dims.end());
                 _channels = _dims.at(1);
             } else if (_layout == RocalTensorlayout::NFHWC) {
-                _max_shape[0] = _dims.at(3);
-                _max_shape[1] = _dims.at(2);
+                if (!_max_shape.size()) _max_shape.resize(3);  // Since 3 values will be stored in the vector
+                _max_shape[0] = _dims.at(2);
+                _max_shape[1] = _dims.at(3);
                 _channels = _dims.at(4);
             } else if (_layout == RocalTensorlayout::NFCHW) {
-                _max_shape[0] = _dims.at(4);
+                if (!_max_shape.size()) _max_shape.resize(3);  // Since 3 values will be stored in the vector
                 _max_shape[1] = _dims.at(3);
+                _max_shape[2] = _dims.at(4);
                 _channels = _dims.at(2);
             }
         } else {                                                             // For other tensors
@@ -193,6 +199,11 @@ class TensorInfo {
             modify_strides();
         }
         _layout = layout;
+        if (_layout == RocalTensorlayout::NHWC) {
+            _channels = _dims.back();
+        } else if (_layout == RocalTensorlayout::NCHW) {
+            _channels = _dims.at(1);
+        }
     }
     void set_dims(std::vector<size_t>& new_dims) {
         if (_num_of_dims == new_dims.size()) {
@@ -207,19 +218,23 @@ class TensorInfo {
     void modify_dims_width_and_height(RocalTensorlayout layout, size_t width, size_t height) {
         switch (_layout) {
             case RocalTensorlayout::NHWC: {
-                _max_shape[1] = _dims[1] = height;
-                _max_shape[0] = _dims[2] = width;
+                _max_shape[0] = _dims[1] = height;
+                _max_shape[1] = _dims[2] = width;
                 break;
             }
-            case RocalTensorlayout::NCHW:
-            case RocalTensorlayout::NFHWC: {
+            case RocalTensorlayout::NCHW: {
                 _max_shape[1] = _dims[2] = height;
-                _max_shape[0] = _dims[3] = width;
+                _max_shape[2] = _dims[3] = width;
+                break;
+            }
+            case RocalTensorlayout::NFHWC: {
+                _max_shape[0] = _dims[2] = height;
+                _max_shape[1] = _dims[3] = width;
                 break;
             }
             case RocalTensorlayout::NFCHW: {
                 _max_shape[1] = _dims[3] = height;
-                _max_shape[0] = _dims[4] = width;
+                _max_shape[2] = _dims[4] = width;
                 break;
             }
             default: {
@@ -249,6 +264,19 @@ class TensorInfo {
     unsigned batch_size() const { return _batch_size; }
     uint64_t data_size() const { return _data_size; }
     std::vector<size_t> max_shape() const { return _max_shape; }
+    std::vector<size_t> width_height() const { 
+        switch (_layout) {
+            case RocalTensorlayout::NHWC: 
+            case RocalTensorlayout::NFHWC:
+                return {_max_shape[0], _max_shape[1]};
+            case RocalTensorlayout::NCHW: 
+            case RocalTensorlayout::NFCHW:
+                return {_max_shape[1], _max_shape[2]};
+            default: {
+                THROW("Invalid layout type specified")
+            }
+        }
+    }
     std::vector<size_t> dims() const { return _dims; }
     std::vector<size_t> strides() const { return _strides; }
     RocalMemType mem_type() const { return _mem_type; }

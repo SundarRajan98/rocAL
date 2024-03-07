@@ -26,12 +26,12 @@ THE SOFTWARE.
 
 size_t ROCAL_API_CALL rocalGetImageWidth(RocalTensor p_image) {
     auto image = static_cast<Tensor *>(p_image);
-    return image->info().max_shape()[0];
+    return image->info().width_height()[0];
 }
 
 size_t ROCAL_API_CALL rocalGetImageHeight(RocalTensor p_image) {
     auto image = static_cast<Tensor *>(p_image);
-    return image->info().max_shape()[1];
+    return image->info().width_height()[1];
 }
 
 size_t ROCAL_API_CALL rocalGetImagePlanes(RocalTensor p_image) {

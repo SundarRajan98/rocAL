@@ -30,8 +30,8 @@ class RandomCropNode : public CropNode {
     RandomCropNode(const std::vector<Tensor *> &inputs, const std::vector<Tensor *> &outputs);
     RandomCropNode() = delete;
     void init(FloatParam *crop_area_factor, FloatParam *crop_aspect_ratio, FloatParam *x_drift, FloatParam *y_drift, int num_of_attempts);
-    unsigned int get_dst_width() { return _outputs[0]->info().max_shape()[0]; }
-    unsigned int get_dst_height() { return _outputs[0]->info().max_shape()[1]; }
+    unsigned int get_dst_width() { return _outputs[0]->info().width_height()[0]; }
+    unsigned int get_dst_height() { return _outputs[0]->info().width_height()[1]; }
     std::shared_ptr<RocalRandomCropParam> get_crop_param() { return _crop_param; }
     int get_num_of_attempts() { return _num_of_attempts; }
 

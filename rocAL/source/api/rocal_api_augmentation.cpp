@@ -79,8 +79,8 @@ rocalRotate(
     auto angle = static_cast<FloatParam*>(p_angle);
     try {
         if (dest_width == 0 || dest_height == 0) {
-            dest_width = input->info().max_shape()[0];
-            dest_height = input->info().max_shape()[1];
+            dest_width = input->info().width_height()[0];
+            dest_height = input->info().width_height()[1];
         }
         RocalTensorlayout op_tensor_layout = static_cast<RocalTensorlayout>(output_layout);
         RocalTensorDataType op_tensor_datatype = static_cast<RocalTensorDataType>(output_datatype);
@@ -121,8 +121,8 @@ rocalRotateFixed(
     auto input = static_cast<Tensor*>(p_input);
     try {
         if (dest_width == 0 || dest_height == 0) {
-            dest_width = input->info().max_shape()[0];
-            dest_height = input->info().max_shape()[1];
+            dest_width = input->info().width_height()[0];
+            dest_height = input->info().width_height()[1];
         }
         RocalTensorlayout op_tensor_layout = static_cast<RocalTensorlayout>(output_layout);
         RocalTensorDataType op_tensor_datatype = static_cast<RocalTensorDataType>(output_datatype);
@@ -492,8 +492,8 @@ rocalResize(
         } else {
             // compute the output info width and height wrt the scaling modes and roi passed
             if (resize_scaling_mode == ROCAL_SCALING_MODE_STRETCH) {
-                max_out_width = out_width ? out_width : input->info().max_shape()[0];
-                max_out_height = out_height ? out_height : input->info().max_shape()[1];
+                max_out_width = out_width ? out_width : input->info().width_height()[0];
+                max_out_height = out_height ? out_height : input->info().width_height()[1];
             } else if (resize_scaling_mode == ROCAL_SCALING_MODE_NOT_SMALLER) {
                 max_out_width = (out_width ? out_width : out_height) * MAX_ASPECT_RATIO;
                 max_out_height = (out_height ? out_height : out_width) * MAX_ASPECT_RATIO;
@@ -601,8 +601,8 @@ RocalTensor ROCAL_API_CALL
         } else {
             // compute the output info width and height wrt the scaling modes and roi passed
             if (resize_scaling_mode == ROCAL_SCALING_MODE_STRETCH) {
-                max_out_width = out_width ? out_width : input->info().max_shape()[0];
-                max_out_height = out_height ? out_height : input->info().max_shape()[1];
+                max_out_width = out_width ? out_width : input->info().width_height()[0];
+                max_out_height = out_height ? out_height : input->info().width_height()[1];
             } else if (resize_scaling_mode == ROCAL_SCALING_MODE_NOT_SMALLER) {
                 max_out_width = (out_width ? out_width : out_height) * MAX_ASPECT_RATIO;
                 max_out_height = (out_height ? out_height : out_width) * MAX_ASPECT_RATIO;
@@ -862,8 +862,8 @@ rocalWarpAffine(
     auto o1 = static_cast<FloatParam*>(p_o1);
     try {
         if (dest_width == 0 || dest_height == 0) {
-            dest_width = input->info().max_shape()[0];
-            dest_height = input->info().max_shape()[1];
+            dest_width = input->info().width_height()[0];
+            dest_height = input->info().width_height()[1];
         }
         RocalTensorlayout op_tensor_layout = static_cast<RocalTensorlayout>(output_layout);
         RocalTensorDataType op_tensor_datatype = static_cast<RocalTensorDataType>(output_datatype);
@@ -904,8 +904,8 @@ rocalWarpAffineFixed(
     auto input = static_cast<Tensor*>(p_input);
     try {
         if (dest_width == 0 || dest_height == 0) {
-            dest_width = input->info().max_shape()[0];
-            dest_height = input->info().max_shape()[1];
+            dest_width = input->info().width_height()[0];
+            dest_height = input->info().width_height()[1];
         }
         RocalTensorlayout op_tensor_layout = static_cast<RocalTensorlayout>(output_layout);
         RocalTensorDataType op_tensor_datatype = static_cast<RocalTensorDataType>(output_datatype);

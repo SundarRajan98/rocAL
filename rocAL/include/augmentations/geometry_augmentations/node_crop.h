@@ -34,8 +34,8 @@ class CropNode : public Node {
     void init(unsigned int crop_h, unsigned int crop_w, float x_drift, float y_drift);
     void init(unsigned int crop_h, unsigned int crop_w);
     void init(FloatParam *crop_h_factor, FloatParam *crop_w_factor, FloatParam *x_drift, FloatParam *y_drift);
-    unsigned int get_dst_width() { return _outputs[0]->info().max_shape()[0]; }
-    unsigned int get_dst_height() { return _outputs[0]->info().max_shape()[1]; }
+    unsigned int get_dst_width() { return _outputs[0]->info().width_height()[0]; }
+    unsigned int get_dst_height() { return _outputs[0]->info().width_height()[1]; }
     std::shared_ptr<RocalCropParam> get_crop_param() { return _crop_param; }
 
    protected:

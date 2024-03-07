@@ -183,8 +183,8 @@ CIFAR10DataLoader::load_routine() {
                 }
                 _actual_read_size[file_counter] = _reader->read_data(read_ptr, readSize);
                 _raw_img_info._image_names[file_counter] = _reader->id();
-                _raw_img_info._roi_width[file_counter] = _output_tensor->info().max_shape()[0];
-                _raw_img_info._roi_height[file_counter] = _output_tensor->info().max_shape()[1];
+                _raw_img_info._roi_width[file_counter] = _output_tensor->info().width_height()[0];
+                _raw_img_info._roi_height[file_counter] = _output_tensor->info().width_height()[1];
                 _reader->close();
                 file_counter++;
             }

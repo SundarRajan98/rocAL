@@ -28,8 +28,8 @@ THE SOFTWARE.
 #include "exception.h"
 
 SSDRandomCropNode::SSDRandomCropNode(const std::vector<Tensor *> &inputs, const std::vector<Tensor *> &outputs) : CropNode(inputs, outputs),
-                                                                                                                  _dest_width(_outputs[0]->info().max_shape()[0]),
-                                                                                                                  _dest_height(_outputs[0]->info().max_shape()[1]) {
+                                                                                                                  _dest_width(_outputs[0]->info().width_height()[0]),
+                                                                                                                  _dest_height(_outputs[0]->info().width_height()[1]) {
     _crop_param = std::make_shared<RocalRandomCropParam>(_batch_size);
     _is_ssd = true;
 }
